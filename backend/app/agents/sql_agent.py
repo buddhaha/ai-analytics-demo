@@ -6,11 +6,46 @@ Includes safety validations and query execution.
 from langchain_openai import ChatOpenAI
 from langchain_community.agent_toolkits import create_sql_agent, SQLDatabaseToolkit
 from langchain_community.utilities import SQLDatabase
-from typing import Dict, Any, List
+from langchain_core.callbacks.base import BaseCallbackHandler
+from typing import Dict, Any, List, Optional
 import re
 import sqlite3
 from ..config import settings
 from ..database import get_db_connection
+
+
+class SQLCaptureCallback(BaseCallbackHandler):
+    """Callback handler to capture SQL queries and results."""
+    
+    def __init__(self):
+        self.sql_queries: List[str] = []
+        self.last_sql: Optional[str] = None
+        
+    def on_tool_start(self, serialized: Dict[str, Any], input_str: str, **kwargs) -> None:
+        """Capture SQL queries when sql_db_query tool is called."""
+        tool_name = serialized.get("name", "")
+        if tool_name == "sql_db_query":
+            # Extract SQL from input
+            if isinstance(input_str, dict):
+                sql = input_str.get("query", "")
+                self.last_sql = sql
+                self.sql_queries.append(sql)
+            elif isinstance(input_str, str):
+                # Try to parse as dict string representation
+                import ast
+                try:
+                    parsed = ast.literal_eval(input_str)
+                    if isinstance(parsed, dict):
+                        sql = parsed.get("query", input_str)
+                        self.last_sql = sql
+                        self.sql_queries.append(sql)
+                    else:
+                        self.last_sql = input_str
+                        self.sql_queries.append(input_str)
+                except (ValueError, SyntaxError):
+                    # If parsing fails, use as-is
+                    self.last_sql = input_str
+                    self.sql_queries.append(input_str)
 
 
 class SQLAnalyticsAgent:
@@ -45,8 +80,10 @@ class SQLAnalyticsAgent:
             db=self.db,
             verbose=settings.debug,
             agent_type="openai-tools",
-            return_intermediate_steps=True,  # Enable intermediate steps
         )
+        
+        # Initialize callback handler
+        self.sql_callback = SQLCaptureCallback()
     
     def validate_query(self, query: str) -> tuple[bool, str]:
         """
@@ -60,9 +97,11 @@ class SQLAnalyticsAgent:
         """
         query_upper = query.upper()
         
-        # Check for dangerous keywords
+        # Check for dangerous keywords (but allow them in function calls)
         for keyword in self.DANGEROUS_KEYWORDS:
-            if re.search(rf'\b{keyword}\b', query_upper):
+            # Use word boundaries and check it's not part of a function call
+            pattern = rf'\b{keyword}\b(?!\s*\()'
+            if re.search(pattern, query_upper):
                 return False, f"Query contains forbidden keyword: {keyword}"
         
         # Ensure query is SELECT only
@@ -70,7 +109,9 @@ class SQLAnalyticsAgent:
             return False, "Only SELECT queries are allowed"
         
         # Check for multiple statements (SQL injection attempt)
-        if ";" in query[:-1]:  # Allow trailing semicolon
+        # Allow semicolons in string literals and at the end
+        statements = query.split(";")
+        if len(statements) > 2 or (len(statements) == 2 and statements[1].strip()):
             return False, "Multiple SQL statements are not allowed"
         
         return True, ""
@@ -217,56 +258,44 @@ Keep your response concise and focused on business value.
             Dictionary containing SQL, results, analysis, and visualization config
         """
         try:
-            # Use agent to generate and execute SQL
-            response = self.agent.invoke({"input": question})
+            # Reset callback
+            self.sql_callback = SQLCaptureCallback()
             
-            # Debug: Print response structure
-            print(f"\n=== Agent Response Structure ===")
-            print(f"Keys: {response.keys()}")
-            print(f"Intermediate steps count: {len(response.get('intermediate_steps', []))}")
+            # Use agent to generate and execute SQL with callback
+            response = self.agent.invoke(
+                {"input": question},
+                config={"callbacks": [self.sql_callback]}
+            )
             
-            # Extract SQL and results from agent's intermediate steps
-            sql_query = None
+            # Get the last SQL query from callback
+            sql_query = self.sql_callback.last_sql
+            
+            # Debug logging
+            print(f"\n=== SQL Capture Debug ===")
+            print(f"Captured SQL type: {type(sql_query)}")
+            print(f"Captured SQL value: {sql_query}")
+            print(f"SQL is string: {isinstance(sql_query, str)}")
+            
+            # Execute query to get results if we have SQL
             results = []
-            
-            for i, step in enumerate(response.get("intermediate_steps", [])):
-                print(f"\n--- Step {i} ---")
-                if len(step) >= 2:
-                    action, observation = step[0], step[1]
-                    print(f"Action type: {type(action)}")
-                    print(f"Has 'tool' attr: {hasattr(action, 'tool')}")
+            if sql_query:
+                try:
+                    # Ensure it's a string
+                    if isinstance(sql_query, dict):
+                        sql_query = sql_query.get("query", "")
+                        print(f"Extracted from dict: {sql_query}")
                     
-                    if hasattr(action, "tool"):
-                        print(f"Tool name: {action.tool}")
-                        
-                        # Check if this is a SQL query action
-                        if action.tool == "sql_db_query":
-                            print(f"Found SQL query action!")
-                            print(f"Has 'tool_input' attr: {hasattr(action, 'tool_input')}")
-                            
-                            if hasattr(action, "tool_input"):
-                                print(f"Tool input type: {type(action.tool_input)}")
-                                print(f"Tool input: {action.tool_input}")
-                                
-                                # Extract SQL from tool_input
-                                if isinstance(action.tool_input, dict):
-                                    sql_query = action.tool_input.get("query", "")
-                                elif isinstance(action.tool_input, str):
-                                    sql_query = action.tool_input
-                                
-                                print(f"Extracted SQL: {sql_query}")
-                                
-                                # Execute query to get results
-                                if sql_query:
-                                    try:
-                                        results = self.execute_query(sql_query)
-                                        print(f"Query executed successfully, got {len(results)} results")
-                                    except Exception as e:
-                                        print(f"Error executing query: {e}")
-            
-            print(f"\n=== Final Extraction ===")
-            print(f"SQL: {sql_query}")
-            print(f"Results count: {len(results)}")
+                    if isinstance(sql_query, str) and sql_query.strip():
+                        results = self.execute_query(sql_query)
+                        print(f"✅ Captured SQL and executed: {len(results)} results")
+                    else:
+                        print(f"⚠️  SQL query is not a valid string: {sql_query}")
+                except Exception as e:
+                    print(f"❌ Error executing captured SQL: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                print("⚠️  No SQL query was captured")
             
             # Get the final answer from the agent
             analysis = response.get("output", "No analysis available.")

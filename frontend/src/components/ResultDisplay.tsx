@@ -55,8 +55,21 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ response }) => {
             <Code className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 mb-2">Generated SQL</p>
-              <pre className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200 overflow-x-auto">
-                <code>{response.sql}</code>
+              <pre className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200 overflow-x-auto whitespace-pre-wrap break-words">
+                <code>{response.sql
+                  .replace(/\bSELECT\b/gi, 'SELECT\n  ')
+                  .replace(/\bFROM\b/gi, '\nFROM\n  ')
+                  .replace(/\bJOIN\b/gi, '\nJOIN\n  ')
+                  .replace(/\bLEFT JOIN\b/gi, '\nLEFT JOIN\n  ')
+                  .replace(/\bINNER JOIN\b/gi, '\nINNER JOIN\n  ')
+                  .replace(/\bWHERE\b/gi, '\nWHERE\n  ')
+                  .replace(/\bGROUP BY\b/gi, '\nGROUP BY\n  ')
+                  .replace(/\bHAVING\b/gi, '\nHAVING\n  ')
+                  .replace(/\bORDER BY\b/gi, '\nORDER BY\n  ')
+                  .replace(/\bLIMIT\b/gi, '\nLIMIT ')
+                  .replace(/\bAND\b/gi, '\n  AND ')
+                  .replace(/\bOR\b/gi, '\n  OR ')
+                }</code>
               </pre>
             </div>
           </div>
@@ -118,7 +131,11 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ response }) => {
       )}
 
       {/* Visualization */}
-      {response.visualization && response.visualization.type !== 'none' && (
+      {response.visualization &&
+       response.visualization.type !== 'none' &&
+       response.visualization.type !== 'table' &&
+       response.visualization.data &&
+       response.visualization.data.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Visualization</h3>
           <ChartRenderer config={response.visualization} />
