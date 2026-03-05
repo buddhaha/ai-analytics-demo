@@ -5,7 +5,7 @@ An intelligent data analytics system that uses AI to convert natural language qu
 ## 🎯 Features
 
 - **Natural Language Queries**: Ask questions in plain English
-- **AI-Powered SQL Generation**: Claude converts questions to SQL automatically
+- **AI-Powered SQL Generation**: OpenAI GPT-4 converts questions to SQL automatically
 - **Smart Analysis**: AI-generated insights and trend identification
 - **Dynamic Visualizations**: Automatic chart selection (bar, line, pie, table)
 - **Safe Query Execution**: Built-in SQL injection prevention
@@ -18,7 +18,7 @@ Frontend (React + TypeScript)
     ↓
 Backend API (FastAPI)
     ↓
-AI Agent (LangChain + Claude)
+AI Agent (LangChain + OpenAI GPT-4)
     ↓
 SQLite Database
 ```
@@ -27,7 +27,7 @@ SQLite Database
 
 - Python 3.11+
 - Node.js 18+ (for frontend)
-- Anthropic API key (for Claude)
+- OpenAI API key (for GPT-4)
 
 ## 🚀 Quick Start
 
@@ -247,11 +247,11 @@ ai-analytics-demo/
 
 1. **User asks a question** in natural language
 2. **LangChain agent** receives the question
-3. **Claude AI** generates appropriate SQL query
+3. **OpenAI GPT-4** generates appropriate SQL query
 4. **Query validator** ensures safety (read-only, no injection)
 5. **SQL executes** against SQLite database
 6. **Results returned** to agent
-7. **Claude analyzes** the data and generates insights
+7. **OpenAI analyzes** the data and generates insights
 8. **Visualization config** determined automatically
 9. **Response sent** to frontend with data, analysis, and chart config
 10. **Frontend renders** charts and displays insights
@@ -295,7 +295,7 @@ cat backend/.env
 ### Backend
 - **FastAPI**: Modern async web framework
 - **LangChain**: AI agent orchestration
-- **Claude 3.5 Sonnet**: Natural language understanding
+- **OpenAI GPT-4**: Natural language understanding
 - **SQLAlchemy**: Database ORM
 - **SQLite**: Lightweight database
 - **Pydantic**: Data validation
@@ -335,4 +335,4 @@ For issues or questions, please check:
 
 ---
 
-**Built with ❤️ using Claude, LangChain, and FastAPI**
+**Built with ❤️ using OpenAI GPT-4, LangChain, and FastAPI**

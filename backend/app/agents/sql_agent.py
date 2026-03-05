@@ -1,5 +1,5 @@
 """
-SQL Agent using LangChain and Claude for natural language to SQL translation.
+SQL Agent using LangChain and OpenAI GPT-4 for natural language to SQL translation.
 Includes safety validations and query execution.
 """
 
@@ -150,7 +150,7 @@ class SQLAnalyticsAgent:
     
     def analyze_results(self, question: str, sql: str, results: List[Dict[str, Any]]) -> str:
         """
-        Use Claude to analyze query results and generate insights.
+        Use OpenAI to analyze query results and generate insights.
         
         Args:
             question: Original user question
@@ -163,7 +163,7 @@ class SQLAnalyticsAgent:
         if not results:
             return "No data found for this query."
         
-        # Prepare context for Claude
+        # Prepare context for OpenAI
         results_summary = f"Found {len(results)} results."
         if len(results) <= 10:
             results_text = str(results)
@@ -270,12 +270,6 @@ Keep your response concise and focused on business value.
             # Get the last SQL query from callback
             sql_query = self.sql_callback.last_sql
             
-            # Debug logging
-            print(f"\n=== SQL Capture Debug ===")
-            print(f"Captured SQL type: {type(sql_query)}")
-            print(f"Captured SQL value: {sql_query}")
-            print(f"SQL is string: {isinstance(sql_query, str)}")
-            
             # Execute query to get results if we have SQL
             results = []
             if sql_query:
@@ -283,19 +277,12 @@ Keep your response concise and focused on business value.
                     # Ensure it's a string
                     if isinstance(sql_query, dict):
                         sql_query = sql_query.get("query", "")
-                        print(f"Extracted from dict: {sql_query}")
                     
                     if isinstance(sql_query, str) and sql_query.strip():
                         results = self.execute_query(sql_query)
-                        print(f"✅ Captured SQL and executed: {len(results)} results")
-                    else:
-                        print(f"⚠️  SQL query is not a valid string: {sql_query}")
                 except Exception as e:
-                    print(f"❌ Error executing captured SQL: {e}")
-                    import traceback
-                    traceback.print_exc()
-            else:
-                print("⚠️  No SQL query was captured")
+                    # Log error but don't fail the request
+                    print(f"Error executing SQL: {e}")
             
             # Get the final answer from the agent
             analysis = response.get("output", "No analysis available.")

@@ -7,7 +7,7 @@ Follow these steps to get the application running on your machine.
 Before starting, make sure you have:
 - ✅ Python 3.11 or higher installed
 - ✅ Node.js 18 or higher installed
-- ✅ An Anthropic API key ([Get one here](https://console.anthropic.com/))
+- ✅ An OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
 
 Check versions:
 ```bash
@@ -55,7 +55,7 @@ pip install -r requirements.txt
 # Create .env file
 cp .env.example .env
 
-# Edit .env and add your Anthropic API key
+# Edit .env and add your OpenAI API key
 # OPENAI_API_KEY=sk-your-key-here
 
 # Create and seed database
@@ -73,7 +73,7 @@ You should see:
 ```
 🚀 Starting AI Analytics API...
 📊 Database: sqlite:///./database/ecommerce.db
-🤖 AI Model: Claude 3.5 Sonnet
+🤖 AI Model: OpenAI GPT-4
 INFO:     Uvicorn running on http://0.0.0.0:8000
 ```
 

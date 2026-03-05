@@ -52,8 +52,8 @@ An AI agent demo that extracts information from a local SQLite database, perform
                          │                   │
                          ▼                   ▼
               ┌──────────────────┐  ┌──────────────────┐
-              │  SQLite Database │  │  Claude API      │
-              │  (E-commerce)    │  │  (Anthropic)     │
+              │  SQLite Database │  │  OpenAI API      │
+              │  (E-commerce)    │  │  (GPT-4)         │
               │                  │  │                  │
               │  • customers     │  │  • SQL Gen       │
               │  • products      │  │  • Analysis      │
@@ -86,7 +86,7 @@ User Query: "Show me top 10 customers by revenue"
     │
     ▼
 ┌─────────────────────────────────────────────────────────┐
-│ 3. Agent calls Claude API                               │
+│ 3. Agent calls OpenAI API                               │
 │    • Generates SQL query from natural language          │
 │    • Returns: SELECT c.name, SUM(o.total) as revenue... │
 └─────────────────────────────────────────────────────────┘
@@ -102,7 +102,7 @@ User Query: "Show me top 10 customers by revenue"
     ▼
 ┌─────────────────────────────────────────────────────────┐
 │ 5. Analysis Tool processes results                      │
-│    • Sends data to Claude for interpretation            │
+│    • Sends data to OpenAI for interpretation            │
 │    • Generates insights and trends                       │
 │    • Identifies anomalies or patterns                    │
 └─────────────────────────────────────────────────────────┘
@@ -209,7 +209,7 @@ User Query: "Show me top 10 customers by revenue"
 ### Backend
 - **Framework**: FastAPI (async, high-performance)
 - **AI Framework**: LangChain (agent orchestration)
-- **LLM**: Anthropic Claude 3.5 Sonnet
+- **LLM**: OpenAI GPT-4
 - **Database**: SQLite (local, file-based)
 - **ORM**: SQLAlchemy
 - **Data Processing**: pandas, numpy
@@ -311,7 +311,7 @@ Users can ask questions in plain English:
 - "Show me customers who haven't ordered in 3 months"
 
 ### 2. Intelligent SQL Generation
-- LangChain agent uses Claude to convert NL → SQL
+- LangChain agent uses OpenAI GPT-4 to convert NL → SQL
 - Validates queries for safety (read-only operations)
 - Handles complex joins and aggregations
 - Optimizes query performance
@@ -369,7 +369,7 @@ Users can ask questions in plain English:
 **Agent Process**:
 1. Generates SQL: `SELECT strftime('%Y-%m', order_date) as month, SUM(total_amount) as revenue FROM orders WHERE strftime('%Y', order_date) = '2025' GROUP BY month ORDER BY month`
 2. Executes query
-3. Analyzes results with Claude
+3. Analyzes results with OpenAI
 4. Generates line chart configuration
 5. Returns insights: "Revenue shows steady growth with peak in December..."
 
@@ -411,7 +411,7 @@ Users can ask questions in plain English:
 
 ### Phase 3: AI Agent
 - [ ] LangChain integration
-- [ ] Claude API setup
+- [ ] OpenAI API setup
 - [ ] SQL generation tool
 - [ ] Analysis tool
 - [ ] Visualization formatter
@@ -456,7 +456,7 @@ This demo showcases:
 2. ✅ Set up SQLite database with schema
 3. ✅ Generate realistic sample data
 4. ✅ Initialize FastAPI backend
-5. ✅ Configure LangChain with Claude
+5. ✅ Configure LangChain with OpenAI
 6. ✅ Build SQL agent with tools
 7. ✅ Create API endpoints
 8. ✅ Set up React frontend

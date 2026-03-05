@@ -8,12 +8,6 @@ interface ResultDisplayProps {
 }
 
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ response }) => {
-  // Debug logging
-  console.log('ResultDisplay received response:', response);
-  console.log('SQL:', response.sql);
-  console.log('Results:', response.results);
-  console.log('Results length:', response.results?.length);
-  
   if (!response.success) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">

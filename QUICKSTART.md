@@ -5,7 +5,7 @@ Get the AI Analytics Demo running in 5 minutes!
 ## Prerequisites
 
 - Python 3.11+
-- Anthropic API key ([Get one here](https://console.anthropic.com/))
+- OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
 
 ## Setup Steps
 
@@ -24,7 +24,7 @@ This will:
 
 ### 2. Add Your API Key
 
-Edit `backend/.env` and add your Anthropic API key:
+Edit `backend/.env` and add your OpenAI API key:
 
 ```env
 OPENAI_API_KEY=sk-xxxxxxxxxxxxx

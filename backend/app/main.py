@@ -44,7 +44,7 @@ async def startup_event():
     """Initialize services on startup."""
     print("🚀 Starting AI Analytics API...")
     print(f"📊 Database: {settings.database_url}")
-    print(f"🤖 AI Model: Claude 3.5 Sonnet")
+    print(f"🤖 AI Model: OpenAI GPT-4")
     print(f"🌐 CORS Origins: {settings.cors_origins}")
 
 
