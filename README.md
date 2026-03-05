@@ -43,7 +43,7 @@ cd ai-analytics-demo
 ```bash
 # Create virtual environment
 cd backend
-python -m venv venv
+python3.11 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies

@@ -45,6 +45,7 @@ class SQLAnalyticsAgent:
             db=self.db,
             verbose=settings.debug,
             agent_type="openai-tools",
+            return_intermediate_steps=True,  # Enable intermediate steps
         )
     
     def validate_query(self, query: str) -> tuple[bool, str]:
@@ -219,28 +220,53 @@ Keep your response concise and focused on business value.
             # Use agent to generate and execute SQL
             response = self.agent.invoke({"input": question})
             
+            # Debug: Print response structure
+            print(f"\n=== Agent Response Structure ===")
+            print(f"Keys: {response.keys()}")
+            print(f"Intermediate steps count: {len(response.get('intermediate_steps', []))}")
+            
             # Extract SQL and results from agent's intermediate steps
             sql_query = None
             results = []
             
-            for step in response.get("intermediate_steps", []):
+            for i, step in enumerate(response.get("intermediate_steps", [])):
+                print(f"\n--- Step {i} ---")
                 if len(step) >= 2:
                     action, observation = step[0], step[1]
-                    # Check if this is a SQL query action
-                    if hasattr(action, "tool") and action.tool == "sql_db_query":
-                        if hasattr(action, "tool_input"):
-                            # Extract SQL from tool_input
-                            if isinstance(action.tool_input, dict):
-                                sql_query = action.tool_input.get("query", "")
-                            elif isinstance(action.tool_input, str):
-                                sql_query = action.tool_input
+                    print(f"Action type: {type(action)}")
+                    print(f"Has 'tool' attr: {hasattr(action, 'tool')}")
+                    
+                    if hasattr(action, "tool"):
+                        print(f"Tool name: {action.tool}")
+                        
+                        # Check if this is a SQL query action
+                        if action.tool == "sql_db_query":
+                            print(f"Found SQL query action!")
+                            print(f"Has 'tool_input' attr: {hasattr(action, 'tool_input')}")
                             
-                            # Parse observation to get results
-                            if observation and sql_query:
-                                try:
-                                    results = self.execute_query(sql_query)
-                                except:
-                                    pass
+                            if hasattr(action, "tool_input"):
+                                print(f"Tool input type: {type(action.tool_input)}")
+                                print(f"Tool input: {action.tool_input}")
+                                
+                                # Extract SQL from tool_input
+                                if isinstance(action.tool_input, dict):
+                                    sql_query = action.tool_input.get("query", "")
+                                elif isinstance(action.tool_input, str):
+                                    sql_query = action.tool_input
+                                
+                                print(f"Extracted SQL: {sql_query}")
+                                
+                                # Execute query to get results
+                                if sql_query:
+                                    try:
+                                        results = self.execute_query(sql_query)
+                                        print(f"Query executed successfully, got {len(results)} results")
+                                    except Exception as e:
+                                        print(f"Error executing query: {e}")
+            
+            print(f"\n=== Final Extraction ===")
+            print(f"SQL: {sql_query}")
+            print(f"Results count: {len(results)}")
             
             # Get the final answer from the agent
             analysis = response.get("output", "No analysis available.")

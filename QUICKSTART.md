@@ -150,7 +150,7 @@ If the setup script doesn't work:
 
 ```bash
 # 1. Create virtual environment
-python3 -m venv venv
+python3.11 -m venv venv
 source venv/bin/activate
 
 # 2. Install dependencies
