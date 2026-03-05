@@ -32,7 +32,7 @@ chmod +x setup.sh
 
 # Edit .env file and add your API key
 nano .env  # or use any text editor
-# Add: ANTHROPIC_API_KEY=sk-ant-your-key-here
+# Add: OPENAI_API_KEY=sk-your-key-here
 ```
 
 ### Option B: Manual Setup
@@ -56,7 +56,7 @@ pip install -r requirements.txt
 cp .env.example .env
 
 # Edit .env and add your Anthropic API key
-# ANTHROPIC_API_KEY=sk-ant-your-key-here
+# OPENAI_API_KEY=sk-your-key-here
 
 # Create and seed database
 python scripts/seed_data.py
@@ -190,7 +190,7 @@ python scripts/seed_data.py
 
 ### "Invalid API key" error
 - Check that `.env` file exists in `backend/` directory
-- Verify your `ANTHROPIC_API_KEY` is correct
+- Verify your `OPENAI_API_KEY` is correct
 - Make sure there are no extra spaces or quotes
 
 ### Port 8000 already in use
@@ -225,7 +225,7 @@ npm install
 ## 📁 Project Structure
 
 ```
-Current Directory: /Users/mirekfokt/Projects/2026_03_talk_to_data/
+Current Directory: /path/to/ai-analytics-demo/
 
 ├── backend/          # Python FastAPI backend
 │   ├── app/         # Application code

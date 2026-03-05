@@ -34,8 +34,8 @@ SQLite Database
 ### 1. Clone and Setup
 
 ```bash
-git clone <repository-url>
-cd 2026_03_talk_to_data
+git clone https://github.com/YOUR_USERNAME/ai-analytics-demo.git
+cd ai-analytics-demo
 ```
 
 ### 2. Backend Setup
@@ -51,7 +51,7 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Edit .env and add your OPENAI_API_KEY
 ```
 
 ### 3. Initialize Database
@@ -102,7 +102,7 @@ Create `backend/.env` file:
 
 ```env
 # Required
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 
 # Optional (defaults shown)
 DATABASE_URL=sqlite:///./database/ecommerce.db
@@ -219,7 +219,7 @@ curl -X POST http://localhost:8000/api/query \
 ## 📁 Project Structure
 
 ```
-2026_03_talk_to_data/
+ai-analytics-demo/
 ├── backend/
 │   ├── app/
 │   │   ├── agents/          # AI agent logic

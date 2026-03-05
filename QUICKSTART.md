@@ -27,7 +27,7 @@ This will:
 Edit `backend/.env` and add your Anthropic API key:
 
 ```env
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
+OPENAI_API_KEY=sk-xxxxxxxxxxxxx
 ```
 
 ### 3. Start the Server
@@ -129,7 +129,7 @@ python scripts/seed_data.py
 ```
 
 ### "Invalid API key"
-Check that your `ANTHROPIC_API_KEY` in `.env` is correct
+Check that your `OPENAI_API_KEY` in `.env` is correct
 
 ### Port 8000 already in use
 ```bash
