@@ -13,6 +13,16 @@ import sqlite3
 from ..config import settings
 from ..database import get_db_connection
 
+# Langfuse integration
+try:
+    from langfuse import Langfuse
+    from langfuse.langchain import CallbackHandler as LangfuseCallbackHandler
+    LANGFUSE_AVAILABLE = True
+except ImportError:
+    LANGFUSE_AVAILABLE = False
+    Langfuse = None
+    LangfuseCallbackHandler = None
+
 
 class SQLCaptureCallback(BaseCallbackHandler):
     """Callback handler to capture SQL queries and results."""
@@ -62,6 +72,34 @@ class SQLAnalyticsAgent:
     
     def __init__(self):
         """Initialize the SQL agent with OpenAI and database connection."""
+        # Initialize Langfuse callback if enabled
+        self.langfuse_handler = None
+        self.langfuse_client = None
+        if settings.langfuse_enabled and LANGFUSE_AVAILABLE:
+            try:
+                print(f"🔍 Initializing Langfuse with host: {settings.langfuse_host}")
+                # Initialize Langfuse client
+                self.langfuse_client = Langfuse(
+                    public_key=settings.langfuse_public_key,
+                    secret_key=settings.langfuse_secret_key,
+                    host=settings.langfuse_host
+                )
+                # Create callback handler
+                self.langfuse_handler = LangfuseCallbackHandler(
+                    public_key=settings.langfuse_public_key
+                )
+                print("✅ Langfuse handler initialized successfully")
+            except Exception as e:
+                print(f"❌ Warning: Failed to initialize Langfuse: {e}")
+                import traceback
+                traceback.print_exc()
+                self.langfuse_handler = None
+                self.langfuse_client = None
+        elif not settings.langfuse_enabled:
+            print("ℹ️  Langfuse is disabled in settings")
+        elif not LANGFUSE_AVAILABLE:
+            print("⚠️  Langfuse package not available")
+        
         # Initialize OpenAI LLM
         self.llm = ChatOpenAI(
             model="gpt-4-turbo-preview",
@@ -187,7 +225,13 @@ Provide:
 Keep your response concise and focused on business value.
 """
         
-        response = self.llm.invoke(analysis_prompt)
+        # Prepare callbacks
+        callbacks = [self.langfuse_handler] if self.langfuse_handler else []
+        
+        response = self.llm.invoke(
+            analysis_prompt,
+            config={"callbacks": callbacks} if callbacks else {}
+        )
         return response.content
     
     def determine_visualization(self, question: str, results: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -261,10 +305,15 @@ Keep your response concise and focused on business value.
             # Reset callback
             self.sql_callback = SQLCaptureCallback()
             
-            # Use agent to generate and execute SQL with callback
+            # Prepare callbacks list
+            callbacks = [self.sql_callback]
+            if self.langfuse_handler:
+                callbacks.append(self.langfuse_handler)
+            
+            # Use agent to generate and execute SQL with callbacks
             response = self.agent.invoke(
                 {"input": question},
-                config={"callbacks": [self.sql_callback]}
+                config={"callbacks": callbacks}
             )
             
             # Get the last SQL query from callback

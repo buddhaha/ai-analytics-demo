@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     
     # OpenAI API
     openai_api_key: str
+    openai_model: str = "gpt-4"
     
     # Database
     database_url: str = "sqlite:///./database/ecommerce.db"
@@ -28,6 +29,12 @@ class Settings(BaseSettings):
     # LangChain
     langchain_tracing_v2: bool = False
     langchain_api_key: str = ""
+    
+    # Langfuse (LLM Observability)
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
+    langfuse_enabled: bool = False
     
     @field_validator('cors_origins', mode='before')
     @classmethod

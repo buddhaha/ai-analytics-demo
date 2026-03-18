@@ -3,18 +3,31 @@ API routes for the AI Analytics Demo.
 Handles query processing, schema info, and sample queries.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from ..agents.sql_agent import get_agent
+from ..agents.mcp_agent import MCPSQLAnalyticsAgent
 
 router = APIRouter()
+
+# Global MCP agent instance
+_mcp_agent: Optional[MCPSQLAnalyticsAgent] = None
+
+
+def get_mcp_agent() -> MCPSQLAnalyticsAgent:
+    """Get or create MCP agent instance."""
+    global _mcp_agent
+    if _mcp_agent is None:
+        _mcp_agent = MCPSQLAnalyticsAgent()
+    return _mcp_agent
 
 
 class QueryRequest(BaseModel):
     """Request model for natural language queries."""
     question: str
     session_id: Optional[str] = None
+    use_mcp: bool = False  # Feature flag to use MCP agent
 
 
 class QueryResponse(BaseModel):
@@ -44,9 +57,27 @@ async def process_query(request: QueryRequest):
         raise HTTPException(status_code=400, detail="Question cannot be empty")
     
     try:
-        agent = get_agent()
-        result = await agent.process_query(request.question)
-        return QueryResponse(**result)
+        if request.use_mcp:
+            # Use MCP agent
+            mcp_agent = get_mcp_agent()
+            result = await mcp_agent.query(request.question)
+            
+            # Convert MCP result to QueryResponse format
+            return QueryResponse(
+                success=result.get("results", {}).get("success", False) if result.get("results") else True,
+                question=request.question,
+                sql=result.get("sql_query"),
+                results=result.get("results", {}).get("data", []) if result.get("results") else [],
+                analysis=result.get("response", ""),
+                visualization={},  # MCP agent doesn't generate viz config yet
+                row_count=result.get("results", {}).get("row_count", 0) if result.get("results") else 0,
+                error=result.get("results", {}).get("error") if result.get("results") else None
+            )
+        else:
+            # Use original agent
+            agent = get_agent()
+            result = await agent.process_query(request.question)
+            return QueryResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
 
@@ -102,22 +133,62 @@ async def get_schema():
 
 
 @router.get("/sample-queries")
-async def get_sample_queries():
+async def get_sample_queries(use_mcp: bool = Query(False, description="Use MCP agent")):
     """
     Get sample queries that users can try.
+    
+    Args:
+        use_mcp: Whether to get samples from MCP agent
     
     Returns:
         List of sample query strings
     """
     try:
-        agent = get_agent()
-        samples = agent.get_sample_queries()
+        if use_mcp:
+            mcp_agent = get_mcp_agent()
+            samples = mcp_agent.get_sample_queries()
+        else:
+            agent = get_agent()
+            samples = agent.get_sample_queries()
+        
         return {
             "success": True,
-            "queries": samples
+            "queries": samples,
+            "agent_type": "mcp" if use_mcp else "direct"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving samples: {str(e)}")
+
+
+@router.post("/query/mcp")
+async def process_mcp_query(request: QueryRequest):
+    """
+    Process a query using the MCP agent specifically.
+    This is a dedicated endpoint for testing MCP integration.
+    
+    Args:
+        request: QueryRequest containing the user's question
+        
+    Returns:
+        Raw MCP agent response
+    """
+    if not request.question or not request.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
+    
+    try:
+        mcp_agent = get_mcp_agent()
+        result = await mcp_agent.query(request.question)
+        
+        return {
+            "success": True,
+            "question": request.question,
+            "response": result.get("response"),
+            "sql_query": result.get("sql_query"),
+            "results": result.get("results"),
+            "agent_type": "mcp"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing MCP query: {str(e)}")
 
 
 @router.get("/health")
